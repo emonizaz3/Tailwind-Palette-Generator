@@ -1,20 +1,28 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Tailwind Palette Generator Pro
 
-# Run and deploy your AI Studio app
+**Tailwind Palette Generator Pro** is a powerful tool designed for developers and designers to instantly generate, visualize, and fine-tune Tailwind CSS color palettes.
 
-This contains everything you need to run your app locally.
+## What It Does
 
-View your app in AI Studio: https://ai.studio/apps/drive/13W7GWQAUQ9B8hY998ANo4aTWuEBgw8Na
+- **Instant Palette Generation**: Enter a base hex color, and the app generates a complete 50-950 Tailwind color scale.
+- **Real-time Visualization**: Preview your generated colors on a variety of professional UI components (Dashboards, Profiles, Pricing cards, etc.).
+- **Smart Color Harmony**: Automatically generate secondary colors using complementary, analogous, or triadic harmony rules.
+- **Palette Editor**: Manually fine-tune individual shades to get the perfect look.
+- **Dark Mode**: Toggle between light and dark themes to ensure your palette works in any context.
+- **Accessibility Check**: Verify contrast ratios against WCAG standards.
+- **Easy Export**: One-click export of your configuration for `tailwind.config.js`.
 
-## Run Locally
+## How to Run
 
-**Prerequisites:**  Node.js
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
 
+2.  **Start the Development Server**:
+    ```bash
+    npm run dev
+    ```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+3.  **Open in Browser**:
+    Navigate to `http://localhost:5173` (or the URL shown in your terminal) to use the app.
