@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generatePalette, generateRandomColor, getContrastYIQ, getHarmoniousColor, ColorScheme } from './utils/colorGenerator';
+import { generatePalette, generateRandomColor, getContrastYIQ, ColorScheme, getHarmoniousColor, generateHarmony, getContrastRatio } from './utils/colorGenerator';
 import { Palette, AppState } from './types';
 import { UiExampleGrid } from './components/Previews';
 import {
@@ -373,6 +373,7 @@ const App: React.FC = () => {
     const [showEditor, setShowEditor] = useState(false);
     const [colorScheme, setColorScheme] = useState<ColorScheme>('auto');
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [contrastView, setContrastView] = useState<'p-p' | 's-s' | 'p-s' | 's-p'>('p-p');
 
     // Update CSS Variables
     useEffect(() => {
@@ -621,48 +622,129 @@ const App: React.FC = () => {
             )}
 
             {/* Contrast Grid Modal */}
-            {
-                showContrast && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col scale-100 animate-in zoom-in-95 duration-200">
-                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                <div>
-                                    <h2 className="text-xl font-bold text-slate-800">Contrast Grid</h2>
-                                    <p className="text-xs text-slate-500">Check WCAG accessibility for your primary color scale.</p>
-                                </div>
-                                <button onClick={() => setShowContrast(false)} className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                                    <X className="rotate-90" size={20} />
+            {showContrast && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col scale-100 animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800">Contrast Grid</h2>
+                                <p className="text-xs text-slate-500">Check WCAG accessibility for your color palettes.</p>
+                            </div>
+                            <button onClick={() => setShowContrast(false)} className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors">
+                                <X className="rotate-90" size={20} />
+                            </button>
+                        </div>
+
+                        {/* Tabs for Contrast View */}
+                        {state.hasSecondary && (
+                            <div className="px-6 pt-4 flex gap-2 border-b border-slate-100 bg-white overflow-x-auto">
+                                <button
+                                    onClick={() => setContrastView('p-p')}
+                                    className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${contrastView === 'p-p' ? 'border-primary-500 text-primary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Primary / Primary
+                                </button>
+                                <button
+                                    onClick={() => setContrastView('s-s')}
+                                    className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${contrastView === 's-s' ? 'border-secondary-500 text-secondary-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Secondary / Secondary
+                                </button>
+                                <button
+                                    onClick={() => setContrastView('p-s')}
+                                    className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${contrastView === 'p-s' ? 'border-slate-800 text-slate-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Primary Bg / Secondary Text
+                                </button>
+                                <button
+                                    onClick={() => setContrastView('s-p')}
+                                    className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${contrastView === 's-p' ? 'border-slate-800 text-slate-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                                >
+                                    Secondary Bg / Primary Text
                                 </button>
                             </div>
-                            <div className="p-8 overflow-y-auto bg-white">
-                                <div className="grid grid-cols-12 gap-1 mb-1">
-                                    <div className="col-span-1"></div>
-                                    {Object.keys(state.primary.palette).map(key => (
-                                        <div key={key} className="col-span-1 text-center text-[10px] font-bold text-slate-400">{key}</div>
-                                    ))}
-                                </div>
-                                {Object.entries(state.primary.palette).map(([bgName, bgHex]) => (
-                                    <div key={bgName} className="grid grid-cols-12 gap-1 mb-1">
-                                        <div className="col-span-1 text-[10px] font-bold text-slate-400 flex items-center justify-end pr-2">{bgName}</div>
-                                        {Object.entries(state.primary.palette).map(([textName, textHex]) => {
-                                            // Simple contrast check logic (placeholder)
-                                            return (
-                                                <div
-                                                    key={textName}
-                                                    className="col-span-1 aspect-square rounded flex items-center justify-center text-[10px] font-bold transition-transform hover:scale-110 cursor-default"
-                                                    style={{ backgroundColor: bgHex as string, color: textHex as string }}
-                                                >
-                                                    AA
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                ))}
-                            </div>
+                        )}
+
+                        <div className="p-8 overflow-y-auto bg-white">
+                            {(() => {
+                                let rowPalette = state.primary.palette;
+                                let colPalette = state.primary.palette;
+                                let rowLabel = 'Primary';
+                                let colLabel = 'Primary';
+
+                                if (state.hasSecondary) {
+                                    if (contrastView === 's-s') {
+                                        rowPalette = state.secondary.palette;
+                                        colPalette = state.secondary.palette;
+                                        rowLabel = 'Secondary';
+                                        colLabel = 'Secondary';
+                                    } else if (contrastView === 'p-s') {
+                                        rowPalette = state.primary.palette;
+                                        colPalette = state.secondary.palette;
+                                        rowLabel = 'Primary';
+                                        colLabel = 'Secondary';
+                                    } else if (contrastView === 's-p') {
+                                        rowPalette = state.secondary.palette;
+                                        colPalette = state.primary.palette;
+                                        rowLabel = 'Secondary';
+                                        colLabel = 'Primary';
+                                    }
+                                }
+
+                                return (
+                                    <>
+                                        <div className="grid grid-cols-12 gap-1 mb-1">
+                                            <div className="col-span-1"></div>
+                                            {Object.keys(colPalette).map(key => (
+                                                <div key={key} className="col-span-1 text-center text-[10px] font-bold text-slate-400">{key}</div>
+                                            ))}
+                                        </div>
+                                        {Object.entries(rowPalette).map(([bgName, bgHex]) => (
+                                            <div key={bgName} className="grid grid-cols-12 gap-1 mb-1">
+                                                <div className="col-span-1 text-[10px] font-bold text-slate-400 flex items-center justify-end pr-2">{bgName}</div>
+                                                {Object.entries(colPalette).map(([textName, textHex]) => {
+                                                    const ratio = getContrastRatio(bgHex as string, textHex as string);
+                                                    const isAAA = ratio >= 7;
+                                                    const isAA = ratio >= 4.5;
+                                                    const isAALarge = ratio >= 3;
+
+                                                    let badgeColor = 'bg-slate-100 text-slate-400';
+                                                    if (isAAA) badgeColor = 'bg-green-100 text-green-700 font-bold';
+                                                    else if (isAA) badgeColor = 'bg-blue-100 text-blue-700 font-bold';
+                                                    else if (isAALarge) badgeColor = 'bg-orange-100 text-orange-700';
+
+                                                    return (
+                                                        <div
+                                                            key={textName}
+                                                            className={`col-span-1 aspect-square rounded flex flex-col items-center justify-center relative group transition-all hover:scale-110 hover:z-10 cursor-default border ${isAA ? 'border-transparent' : 'border-slate-100'}`}
+                                                            style={{ backgroundColor: bgHex as string }}
+                                                        >
+                                                            <span style={{ color: textHex as string }} className="text-sm font-bold mb-1">Aa</span>
+                                                            <span className={`text-[8px] px-1 rounded-full ${badgeColor}`}>
+                                                                {ratio.toFixed(1)}
+                                                            </span>
+
+                                                            {/* Tooltip */}
+                                                            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-slate-800 text-white text-xs p-2 rounded shadow-lg whitespace-nowrap z-20 pointer-events-none">
+                                                                <div className="font-bold">{rowLabel} {bgName} bg / {colLabel} {textName} text</div>
+                                                                <div>Ratio: {ratio.toFixed(2)}:1</div>
+                                                                <div className="flex gap-2 mt-1">
+                                                                    <span className={isAA ? 'text-green-400' : 'text-red-400'}>AA {isAA ? 'Pass' : 'Fail'}</span>
+                                                                    <span className={isAAA ? 'text-green-400' : 'text-red-400'}>AAA {isAAA ? 'Pass' : 'Fail'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        ))}
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
             {/* Palette Editor Modal */}
             {showEditor && (
